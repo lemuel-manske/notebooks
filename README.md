@@ -9,3 +9,12 @@ Some are written in portuguese, and some are in english. It depends on the proje
 - [Blumenau](./blumenau): here, me and some folks from FURB (my university) tried to analyze the distribution of public services across the city of Blumenau, in the state of Santa Catarina, Brazil. We used data from the city's open data portal and created some visualizations to understand how these services are distributed across different neighborhoods
 
 - [FURB](./furb): in this folder, you can find some notebooks related to my work at FURB
+
+## Getting started
+
+Just start the virtual environment and have fun:
+
+```bash
+make init
+make serve
+```
