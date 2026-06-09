@@ -2,10 +2,6 @@
 
 Análise de distribuição de serviços públicos na cidade de Blumenau, Santa Catarina, Brasil, utilizando python e grafos.
 
-## Colab
-
-Abrir como [cópia](https://colab.research.google.com/github/lemuel-manske/city-block/blob/main/city.ipynb).
-
 ## Fontes
 
 ### Bairros
