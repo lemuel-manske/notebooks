@@ -1,8 +1,18 @@
 import copy
+import math
 import pandas as pd
 
 
 R = pd.read_csv("data.csv", header=None)
+
+print(R.describe())
+# Qual a média de preço das casas?
+# > 340412.7
+# Quanto custa a menor casa?
+# > 169900.00
+# Quantos quartos tem a casa mais cara?
+# > 5
+
 R = R.to_numpy()
 R = R.tolist()
 
@@ -204,22 +214,144 @@ def run_multiple_regression(X, y):
     return mul(X, B(X, y))
 
 
+def avg(arr):
+    return sum(arr) / len(arr)
+
+
+def corr(X, y) -> float:
+    avg_x = avg(X)
+    avg_y = avg(y)
+
+    de: float = 0.0
+    dv1: float = 0.0
+    dv2: float = 0.0
+
+    for x, y in zip(X, y):
+        de += (x - avg_x) * (y - avg_y)
+        dv1 += (x - avg_x)**2
+        dv2 += (y - avg_y)**2
+
+    dv = math.sqrt(dv1 * dv2)
+
+    r = de/dv
+
+    return r
+
+
+def lin_reg(x_, X, y):
+    avg_x = avg(X)
+    avg_y = avg(y)
+
+    b1: float = 0.0
+
+    de: float = 0.0
+    dv: float = 0.0
+
+    for x, y in zip(X, y):
+        de += (x - avg_x) * (y - avg_y)
+        dv += (x - avg_x)**2
+
+    b1 = de / dv
+
+    b0 = avg_y - (b1 * avg_x)
+
+    y = b0 + (b1 * x_)
+
+    return b0, b1, y
+
+
 def run_demo():
+    import matplotlib.pyplot as plt
+
     X = get_data()
     y = get_expected_results()
 
-    print("X:")
-    print(X)
-    print("y:")
-    print(y)
+    house_sizes = [x[1] for x in X]
+    house_prices = [y[0] for y in y]
+    house_bedrooms = [x[2] for x in X]
+
+    print("Correlação Tamanho casa x Preço casa:")
+    print(corr(house_sizes, house_prices))
+
+    print("Regressão linear Tamanho casa x Preço casa:")
+    b0, b1, _ = lin_reg(2000, house_sizes, house_prices)
+    print(f"b0: {b0}, b1: {b1}")
+
+    plt.scatter(house_sizes, house_prices, label="y")
+    plt.plot(house_sizes, [b0 + b1 * x for x in house_sizes], color='red', label="Linha de regressão")
+
+    plt.xlabel("Tamanho da casa (sq ft)")
+    plt.ylabel("Preço da casa (R$)")
+
+    plt.title("Tamanho da casa vs Preço da casa")
+    plt.legend()
+
+    plt.show()
+
+    print("Correlação Quantidade quartos x Preço casa:")
+    print(corr(house_bedrooms, house_prices))
+
+    print("Regressão linear Quantidade quartos x Preço casa:")
+    b0, b1, _ = lin_reg(3, house_bedrooms, house_prices)
+    print(f"b0: {b0}, b1: {b1}")
+
+    plt.scatter(house_bedrooms, house_prices, label="y")
+
+    plt.plot(house_bedrooms, [b0 + b1 * x for x in house_bedrooms], color='red', label="Linha de regressão")
+
+    plt.xlabel("Quantidade de quartos")
+    plt.ylabel("Preço da casa (R$)")
+
+    plt.title("Quantidade de quartos vs Preço da casa")
+    plt.legend()
+
+    plt.show()
+
+    import numpy as np
+    import matplotlib.pyplot as plt
 
     b = B(X, y)
-    print("B:")
-    print(b)
 
-    r = run_multiple_regression(X, y)
-    print("R:")
-    print(r)
+    house_sizes = np.array([x[1] for x in X])
+    house_bedrooms = np.array([x[2] for x in X])
+    house_prices = np.array([value[0] for value in y])
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    ax.scatter(
+        house_sizes,
+        house_bedrooms,
+        house_prices,
+        label="Dados observados",
+    )
+
+    size_grid, bedroom_grid = np.meshgrid(
+        np.linspace(house_sizes.min(), house_sizes.max(), 30),
+        np.linspace(house_bedrooms.min(), house_bedrooms.max(), 30),
+    )
+
+    price_grid = (
+        b[0][0]
+        + b[1][0] * size_grid
+        + b[2][0] * bedroom_grid
+    )
+
+    ax.plot_surface(
+        size_grid,
+        bedroom_grid,
+        price_grid,
+        alpha=0.6,
+    ) # Plano de regressão
+
+    ax.set_xlabel("Tamanho da casa (sq ft)")
+    ax.set_ylabel("Quantidade de quartos")
+    ax.set_zlabel("Preço da casa (R$)")
+    ax.set_title(
+        "Tamanho da casa e quantidade de quartos vs. preço da casa"
+    )
+
+    plt.show()
 
 
 if __name__ == "__main__":
