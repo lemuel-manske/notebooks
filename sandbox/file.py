@@ -210,7 +210,7 @@ def B(X, y):
     return mul(r, y)
 
 
-def run_multiple_regression(X, y):
+def lin_reg_m(X, y):
     return mul(X, B(X, y))
 
 
@@ -286,7 +286,7 @@ def run_demo():
     plt.title("Tamanho da casa vs Preço da casa")
     plt.legend()
 
-    plt.show()
+    # plt.show()
 
     print("Correlação Quantidade quartos x Preço casa:")
     print(corr(house_bedrooms, house_prices))
@@ -305,7 +305,7 @@ def run_demo():
     plt.title("Quantidade de quartos vs Preço da casa")
     plt.legend()
 
-    plt.show()
+    # plt.show()
 
     import numpy as np
     import matplotlib.pyplot as plt
@@ -351,7 +351,26 @@ def run_demo():
         "Tamanho da casa e quantidade de quartos vs. preço da casa"
     )
 
-    plt.show()
+    # plt.show()
+
+    def calc(size, bedrooms):
+        return b[0][0] + b[1][0] * size + b[2][0] * bedrooms
+
+    print(f"Preço esperado para uma casa de 1650 sq ft e 3 quartos: R${calc(1650, 3):.2f}") 
+
+    # Aumente e diminua a quantidade de número de quartos. O que acontece? Por qual motivo?
+
+    print(f"Preço esperado para uma casa de 1650 sq ft e 2 quartos: R${calc(1650, 2):.2f}")
+    print(f"Preço esperado para uma casa de 1650 sq ft e 4 quartos: R${calc(1650, 4):.2f}")
+
+    # > Aumentando o número de quartos, o preço diminui. ?
+
+    from sklearn.linear_model import LinearRegression
+
+    lib_model = LinearRegression()
+    lib_model.fit(X, y)
+
+    print(f"Preço esperado para uma casa de 1650 sq ft e 3 quartos (sklearn): R${lib_model.predict([[1, 1650, 3]])[0][0]:.2f}")
 
 
 if __name__ == "__main__":
