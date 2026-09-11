@@ -2,7 +2,6 @@ import math
 import copy
 
 
-
 def transpose(A):
     r = []
 
@@ -181,7 +180,7 @@ def corr(X: list[int], y: list[float]) -> float:
     return de / math.sqrt(dv1 * dv2)
 
 
-# Função de regressao linear, retorna os betas + ^y
+# Função de regressão linear, retorna os betas + ŷ
 def lin_reg(x_: float, X: list[int], y: list[float]):
     avg_x = avg(X)
     avg_y = avg(y)
@@ -204,7 +203,7 @@ def lin_reg(x_: float, X: list[int], y: list[float]):
     return b0, b1, y_pred
 
 
-# Função de regressão linear múltipla, retorna os betas + ^y
+# Função de regressão linear múltipla, retorna os betas + ŷ
 def lin_reg_mul(X, y):
     def B(X, y):
         x_T = transpose(X)
@@ -214,9 +213,13 @@ def lin_reg_mul(X, y):
         return mul(r, y)
 
     betas = B(X, y)
-    y_pred = mul(X, betas)
 
-    return betas, y_pred
+    return betas, predict(X, betas)
+
+
+# Função de previsão, retorna os valores previstos para os dados de entrada X e os betas calculados.
+def predict(X, betas):
+    return mul(X, betas)
 
 
 # Função de erro quadrático, retorna o SSE, que é a soma dos quadrados dos erros,
@@ -315,7 +318,7 @@ def demo_linear_regression():
 
     # Pega os dados do arquivo CSV e retorna um par de cor (laranja, vermelho, etc.) e pontos (X, y)
     def get_datasets():
-        R = pd.read_csv("trabalho_3_parte_1.csv")
+        R = pd.read_csv("trabalho_1_parte_1.csv")
 
         return [
             {
@@ -370,17 +373,17 @@ def demo_linear_regression():
 # Demonstração da 2ª parte do trabalho, que consiste em regressão linear múltipla.
 def demo_multiple_regression():
     import matplotlib.pyplot as plt
+    import numpy as np
     import pandas as pd
 
 
-    # Pega os dados do arquivo CSV e retorna X e y
+    # Pega os dados do arquivo CSV e retorna X e y.
     def get_dataset():
-        R = pd.read_csv("trabalho_3_parte_2.csv", header=None)
-        R = R.to_numpy()
-        R = R.tolist()
+        R = pd.read_csv("trabalho_1_parte_2.csv", header=None) \
+            .to_numpy() \
+            .tolist()
 
         RESULTS_COL_IDX = 2
-
         X_1_COL_IDX = 0
         X_2_COL_IDX = 1
 
@@ -398,55 +401,67 @@ def demo_multiple_regression():
 
         return X, y
 
+    # Exibe a correlação e a regressão linear simples de uma variável em relação ao preço da casa.
+    def show_simple_regression(
+        values,
+        prices,
+        prediction_value,
+        correlation_message,
+        regression_message,
+        x_label,
+        chart_title,
+    ):
+        print(correlation_message)
+        c = corr(values, prices)
+        print(c)
+
+        print(regression_message)
+        b0, b1, _ = lin_reg(prediction_value, values, prices)
+        print(f"b0: {b0}, b1: {b1}")
+
+        plt.scatter(values, prices, label="y")
+        plt.plot(
+            values,
+            [b0 + b1 * x for x in values],
+            color='red',
+            label="Linha de regressão",
+        )
+
+        plt.xlabel(x_label)
+        plt.ylabel("Preço da casa (R$)")
+        plt.title(f"{chart_title}, correlação: {c:.2f}")
+        plt.legend()
+        plt.show()
+
     X, y = get_dataset()
 
     house_sizes = [x[1] for x in X]
     house_prices = [y[0] for y in y]
     house_bedrooms = [x[2] for x in X]
 
-    print("Correlação Tamanho casa x Preço casa:")
-    c = corr(house_sizes, house_prices)
-    print(c)
+    # Análise individual: tamanho da casa x preço.
+    show_simple_regression(
+        house_sizes,
+        house_prices,
+        2000,
+        "Correlação: Tamanho casa x Preço casa:",
+        "Regressão linear: Tamanho casa x Preço casa:",
+        "Tamanho da casa (sq ft)",
+        "Tamanho da casa vs Preço da casa",
+    )
 
-    print("Regressão linear Tamanho casa x Preço casa:")
-    b0, b1, _ = lin_reg(2000, house_sizes, house_prices)
-    print(f"b0: {b0}, b1: {b1}")
+    # Análise individual: quantidade de quartos x preço.
+    show_simple_regression(
+        house_bedrooms,
+        house_prices,
+        3,
+        "Correlação: Quantidade quartos x Preço casa:",
+        "Regressão linear: Quantidade quartos x Preço casa:",
+        "Quantidade de quartos",
+        "Quantidade de quartos vs Preço da casa",
+    )
 
-    plt.scatter(house_sizes, house_prices, label="y")
-    plt.plot(house_sizes, [b0 + b1 * x for x in house_sizes], color='red', label="Linha de regressão")
-
-    plt.xlabel("Tamanho da casa (sq ft)")
-    plt.ylabel("Preço da casa (R$)")
-
-    plt.title(f"Tamanho da casa vs Preço da casa, correlação: {c:.2f}")
-    plt.legend()
-
-    plt.show()
-
-    print("Correlação Quantidade quartos x Preço casa:")
-    c = corr(house_bedrooms, house_prices)
-    print(c)
-
-    print("Regressão linear Quantidade quartos x Preço casa:")
-    b0, b1, _ = lin_reg(3, house_bedrooms, house_prices)
-    print(f"b0: {b0}, b1: {b1}")
-
-    plt.scatter(house_bedrooms, house_prices, label="y")
-
-    plt.plot(house_bedrooms, [b0 + b1 * x for x in house_bedrooms], color='red', label="Linha de regressão")
-
-    plt.xlabel("Quantidade de quartos")
-    plt.ylabel("Preço da casa (R$)")
-
-    plt.title(f"Quantidade de quartos vs Preço da casa, correlação: {c:.2f}")
-    plt.legend()
-
-    plt.show()
-
-    import numpy as np
-    import matplotlib.pyplot as plt
-
-    b = B(X, y)
+    # Regressão linear múltipla e visualização do plano de regressão.
 
     house_sizes = np.array([x[1] for x in X])
     house_bedrooms = np.array([x[2] for x in X])
@@ -467,41 +482,53 @@ def demo_multiple_regression():
         np.linspace(house_bedrooms.min(), house_bedrooms.max(), 30),
     )
 
-    price_grid = (
-        b[0][0]
-        + b[1][0] * size_grid
-        + b[2][0] * bedroom_grid
-    )
+    betas, _ = lin_reg_mul(X, y)
+
+    grid_X = [
+        [1, size, bedrooms]
+        for size, bedrooms in zip(size_grid.ravel(), bedroom_grid.ravel())
+    ]
+
+    price_grid = predict(grid_X, betas)
+
+    price_grid = np.array([
+        value[0] for value in price_grid
+    ]).reshape(size_grid.shape)
 
     ax.plot_surface(
         size_grid,
         bedroom_grid,
         price_grid,
         alpha=0.6,
-    ) # Plano de regressão
+    )  # Plano de regressão
 
-    ax.set_xlabel("Tamanho da casa (sq ft)")
+    ax.set_xlabel("Tamanho da casa")
     ax.set_ylabel("Quantidade de quartos")
     ax.set_zlabel("Preço da casa (R$)")
+
     ax.set_title(
         "Tamanho da casa e quantidade de quartos vs. preço da casa"
     )
 
     plt.show()
 
+    # Previsões usando os coeficientes calculados manualmente.
     def calc(size, bedrooms):
-        return b[0][0] + b[1][0] * size + b[2][0] * bedrooms
+        return betas[0][0] + betas[1][0] * size + betas[2][0] * bedrooms
 
-    print(f"Preço esperado para uma casa de 1650 sq ft e 3 quartos: R${calc(1650, 3):.2f}") 
-    print(f"Preço esperado para uma casa de 1650 sq ft e 2 quartos: R${calc(1650, 2):.2f}")
-    print(f"Preço esperado para uma casa de 1650 sq ft e 4 quartos: R${calc(1650, 4):.2f}")
+    print(f"Preço esperado para uma casa de 1650 e 3 quartos: R${calc(1650, 3):.2f}")
+    print(f"Preço esperado para uma casa de 1650 e 2 quartos: R${calc(1650, 2):.2f}")
+    print(f"Preço esperado para uma casa de 1650 e 4 quartos: R${calc(1650, 4):.2f}")
 
+    # Comparação com a implementação do scikit-learn.
     from sklearn.linear_model import LinearRegression
 
     lib_model = LinearRegression()
     lib_model.fit(X, y)
 
-    print(f"Preço esperado para uma casa de 1650 sq ft e 3 quartos (sklearn): R${lib_model.predict([[1, 1650, 3]])[0][0]:.2f}")$
+    sklearn_predict = lib_model.predict([[1, 1650, 3]])[0][0]
+
+    print(f"Preço esperado para uma casa de 1650 e 3 quartos (sklearn): R${sklearn_predict:.2f}")
 
 
 # Demonstração da 3ª parte do trabalho, que consiste em regressão polinomial.
@@ -515,7 +542,7 @@ def demo_polynomial_regression():
 
     # Pega os dados do arquivo CSV e retorna X e y
     def get_datasets():
-        R = pd.read_csv("trabalho_3_parte_3.csv", header=None)
+        R = pd.read_csv("trabalho_1_parte_3.csv", header=None)
 
         X = R[0].tolist()
         y = R[1].tolist()
@@ -541,3 +568,12 @@ def demo_polynomial_regression():
 
     X, y = get_datasets()
     show_chart(X, y)
+
+
+if __name__ == "__main__":
+    # Aqui, você pode escolher qual demonstração deseja executar.
+    # Descomente a linha correspondente à demonstração desejada.
+
+    # demo_linear_regression()
+    # demo_multiple_regression()
+    demo_polynomial_regression()
