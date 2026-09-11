@@ -1,0 +1,543 @@
+import math
+import copy
+
+
+
+def transpose(A):
+    r = []
+
+    for _ in range(len(A[0])):
+        r.append([])
+
+    for i in range(len(A)):
+        for j in range(len(A[i])):
+            r[j].insert(i, A[i][j])
+
+    return r
+
+
+def upper_t(A):
+    new_A = copy.deepcopy(A)
+    ident = identity(A)
+
+    n = len(new_A)
+
+    for i in range(n):
+        p = new_A[i][i]
+        next_idxs = [k for k in range(n) if k > i]
+
+        if p == 0:
+            raise Exception("Não é possível calcular a inversa de uma matriz singular.")
+
+        for k in next_idxs:
+            x = new_A[k][i]
+            m = x / p
+
+            for l in range(n):
+                new_A[k][l] = new_A[k][l] - m * new_A[i][l]
+                ident[k][l] = ident[k][l] - m * ident[i][l]
+
+    return new_A, ident
+
+
+def backward_subs(A):
+    t_s, i_t_s = upper_t(A)
+
+    n = len(t_s)
+
+    r = copy.deepcopy(t_s)
+    i_r = copy.deepcopy(i_t_s)
+
+    for i in range(n - 1, -1, -1):
+        p = r[i][i]
+        next_idxs = [k for k in range(n) if k < i]
+
+        if p == 0:
+            raise Exception("Não é possível calcular a inversa de uma matriz singular.")
+
+        for k in next_idxs:
+            x = r[k][i]
+            m = x / p
+
+            for l in range(n):
+                r[k][l] = r[k][l] - m * r[i][l]
+                i_r[k][l] = i_r[k][l] - m * i_r[i][l]
+
+    return r, i_r
+
+
+def normalize(A):
+    r_s, i_r_s = backward_subs(A)
+
+    n = len(r_s)
+
+    r_n = copy.deepcopy(r_s)
+    i_n_s = copy.deepcopy(i_r_s)
+
+    for i in range(n):
+        pivot = r_n[i][i]
+
+        for j in range(n):
+            r_n[i][j] = r_n[i][j] / pivot
+            i_n_s[i][j] = i_n_s[i][j] / pivot
+
+    return r_n, i_n_s
+
+
+def determinant(A):
+    n = len(A)
+
+    if n == 1:
+        return A[0][0]
+
+    if n == 2:
+        diag_p = []
+
+        for i in range(n):
+            diag_p.append(A[i][i])
+
+        diag_s = []
+
+        for i in range(n):
+            for j in range(n):
+                if i + j == n - 1:
+                    diag_s.append(A[i][j])
+
+        result_p = 1
+        for x in diag_p:
+            result_p *= x
+
+        result_s = 1
+        for x in diag_s:
+            result_s *= x
+
+        return result_p - result_s
+
+    t_s, _ = upper_t(A)
+
+    r = 1
+    for i in range(n):
+        r = r * t_s[i][i]
+
+    return r
+
+
+def inversed(A):
+    return normalize(A)[1]
+
+
+def mul(A, B):
+    rows_a = len(A)
+    cols_a = len(A[0])
+
+    rows_b = len(B)
+    cols_b = len(B[0])
+
+    # A(m x n) * B(n x p)
+    if cols_a != rows_b:
+        raise Exception('Não consigo multiplicar.')
+
+    result = [[0 for _ in range(cols_b)] for _ in range(rows_a)]
+
+    for m in range(rows_a):
+        for p in range(cols_b):
+            for n in range(cols_a):
+                result[m][p] += A[m][n] * B[n][p]
+
+    return result
+
+
+def identity(A):
+    n = len(A)
+
+    r = [[0 for _ in range(n)] for _ in range(n)]
+
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                r[i][j] = 1
+
+    return r
+
+
+def avg(A):
+    return sum(A) / len(A)
+
+
+# Função de correlação da regressão linear
+def corr(X: list[int], y: list[float]) -> float:
+    avg_x = avg(X)
+    avg_y = avg(y)
+
+    de: float = 0.0
+    dv1: float = 0.0
+    dv2: float = 0.0
+
+    for x, y_ in zip(X, y):
+        de += (x - avg_x) * (y_ - avg_y)
+        dv1 += (x - avg_x)**2
+        dv2 += (y_ - avg_y)**2
+
+    return de / math.sqrt(dv1 * dv2)
+
+
+# Função de regressao linear, retorna os betas + ^y
+def lin_reg(x_: float, X: list[int], y: list[float]):
+    avg_x = avg(X)
+    avg_y = avg(y)
+
+    b1: float = 0.0
+
+    de: float = 0.0
+    dv: float = 0.0
+
+    for x, y_ in zip(X, y):
+        de += (x - avg_x) * (y_ - avg_y)
+        dv += (x - avg_x)**2
+
+    b1 = de / dv
+
+    b0 = avg_y - (b1 * avg_x)
+
+    y_pred = b0 + (b1 * x_)
+
+    return b0, b1, y_pred
+
+
+# Função de regressão linear múltipla, retorna os betas + ^y
+def lin_reg_mul(X, y):
+    def B(X, y):
+        x_T = transpose(X)
+        c = mul(x_T, X)
+        c_inversa = inversed(c)
+        r = mul(c_inversa, x_T)
+        return mul(r, y)
+
+    betas = B(X, y)
+    y_pred = mul(X, betas)
+
+    return betas, y_pred
+
+
+# Função de erro quadrático, retorna o SSE, que é a soma dos quadrados dos erros,
+# ou seja, a soma das diferenças entre os valores reais e os valores previstos ao quadrado.
+
+# É utilizado posteriormente pelo polyfit para calcular o MSE, que é o erro médio quadrático.
+def sse(x, y, coefs):
+    s = 0
+
+    for xi, yi in zip(x, y):
+        y_pred = 0
+
+        for exp, b in enumerate(coefs):
+            y_pred += b * (xi ** exp)
+
+        s += (yi - y_pred) ** 2
+
+    return s
+
+
+# Função de erro médio quadrático, retorna o MSE, que é o erro médio quadrático,
+# ou seja, a média das diferenças entre os valores reais e os valores previstos ao quadrado.
+def mse(x, y):
+    n = len(x)
+    b0, b1, _ = lin_reg(x[0], x, y)
+    return sse(x, y, [b0, b1]) / n
+
+
+# Função de resolução de sistemas lineares, retorna a solução do sistema Ax = b.
+def solve(A, b):
+    n = len(A)
+
+    M = [
+        A[i][:] + [b[i]]
+        for i in range(n)
+    ]
+
+    for col in range(n):
+        pivot = col
+
+        for row in range(col + 1, n):
+            if abs(M[row][col]) > abs(M[pivot][col]):
+                pivot = row
+
+        M[col], M[pivot] = M[pivot], M[col]
+
+        divisor = M[col][col]
+
+        for j in range(col, n + 1):
+            M[col][j] /= divisor
+
+        for row in range(n):
+            if row == col:
+                continue
+
+            factor = M[row][col]
+
+            for j in range(col, n + 1):
+                M[row][j] -= factor * M[col][j]
+
+    return [M[i][-1] for i in range(n)]
+
+
+# Função de ajuste polinomial, retorna os coeficientes do polinômio que melhor se ajusta aos dados.
+# É equivalente ao numpy.polyfit, mas implementado manualmente para fins de aprendizado.
+def polyfit(x, y, deg):
+    X = []
+
+    for xi in x:
+        row = []
+
+        for power in range(deg + 1):
+            row.append(xi ** power)
+
+        X.append(row)
+
+    XT = transpose(X)
+
+    XTX = mul(XT, X)
+
+    Y = [[yi] for yi in y]
+    XTY = mul(XT, Y)
+
+    rhs = [row[0] for row in XTY]
+
+    coefs = solve(XTX, rhs)
+
+    return coefs
+
+
+# Demonstração da 1ª parte do trabalho, que consiste em regressão linear simples.
+def demo_linear_regression():
+    import matplotlib.pyplot as plt
+    import pandas as pd
+
+
+    # Pega os dados do arquivo CSV e retorna um par de cor (laranja, vermelho, etc.) e pontos (X, y)
+    def get_datasets():
+        R = pd.read_csv("trabalho_3_parte_1.csv")
+
+        return [
+            {
+                "color": "red",
+                "points": (R["x1"].tolist(), R["y1"].tolist()),
+            },
+            {
+                "color": "blue",
+                "points": (R["x2"].tolist(), R["y2"].tolist()),
+            },
+            {
+                "color": "green",
+                "points": (R["x3"].tolist(), R["y3"].tolist()),
+            },
+            {
+                "color": "orange",
+                "points": (R["x4"].tolist(), R["y4"].tolist()),
+            }
+        ]
+
+
+    # Mostra um gráfico para o par X, Y e plota a linha de regressão linear.
+    def show_chart(d):
+        x = d['points'][0]
+        y = d['points'][1]
+        color = d['color']
+
+        y_pred = []
+
+        c = corr(x, y)
+
+        for x_ in x:
+            b0, b1, r = lin_reg(x_, x, y)
+            y_pred.append(r)
+
+            title = f"Correlação: {c:.4f}, y={b0:.4f}+{b1:.4f}*X"
+            plt.title(title)
+
+        plt.scatter(x, y, color=color, label='Dataset')
+
+        plt.plot(x, y_pred)
+
+        plt.xlabel("X")
+        plt.ylabel("Y")
+
+        plt.show()
+
+    for dataset in get_datasets():
+        show_chart(dataset)
+
+
+# Demonstração da 2ª parte do trabalho, que consiste em regressão linear múltipla.
+def demo_multiple_regression():
+    import matplotlib.pyplot as plt
+    import pandas as pd
+
+
+    # Pega os dados do arquivo CSV e retorna X e y
+    def get_dataset():
+        R = pd.read_csv("trabalho_3_parte_2.csv", header=None)
+        R = R.to_numpy()
+        R = R.tolist()
+
+        RESULTS_COL_IDX = 2
+
+        X_1_COL_IDX = 0
+        X_2_COL_IDX = 1
+
+        X = []
+        y = []
+
+        for i in range(len(R)):
+            X.append([])
+            X[i].insert(0, 1)
+            X[i].insert(1, R[i][X_1_COL_IDX])
+            X[i].insert(2, R[i][X_2_COL_IDX])
+
+            y.append([])
+            y[i].append(R[i][RESULTS_COL_IDX])
+
+        return X, y
+
+    X, y = get_dataset()
+
+    house_sizes = [x[1] for x in X]
+    house_prices = [y[0] for y in y]
+    house_bedrooms = [x[2] for x in X]
+
+    print("Correlação Tamanho casa x Preço casa:")
+    c = corr(house_sizes, house_prices)
+    print(c)
+
+    print("Regressão linear Tamanho casa x Preço casa:")
+    b0, b1, _ = lin_reg(2000, house_sizes, house_prices)
+    print(f"b0: {b0}, b1: {b1}")
+
+    plt.scatter(house_sizes, house_prices, label="y")
+    plt.plot(house_sizes, [b0 + b1 * x for x in house_sizes], color='red', label="Linha de regressão")
+
+    plt.xlabel("Tamanho da casa (sq ft)")
+    plt.ylabel("Preço da casa (R$)")
+
+    plt.title(f"Tamanho da casa vs Preço da casa, correlação: {c:.2f}")
+    plt.legend()
+
+    plt.show()
+
+    print("Correlação Quantidade quartos x Preço casa:")
+    c = corr(house_bedrooms, house_prices)
+    print(c)
+
+    print("Regressão linear Quantidade quartos x Preço casa:")
+    b0, b1, _ = lin_reg(3, house_bedrooms, house_prices)
+    print(f"b0: {b0}, b1: {b1}")
+
+    plt.scatter(house_bedrooms, house_prices, label="y")
+
+    plt.plot(house_bedrooms, [b0 + b1 * x for x in house_bedrooms], color='red', label="Linha de regressão")
+
+    plt.xlabel("Quantidade de quartos")
+    plt.ylabel("Preço da casa (R$)")
+
+    plt.title(f"Quantidade de quartos vs Preço da casa, correlação: {c:.2f}")
+    plt.legend()
+
+    plt.show()
+
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+    b = B(X, y)
+
+    house_sizes = np.array([x[1] for x in X])
+    house_bedrooms = np.array([x[2] for x in X])
+    house_prices = np.array([value[0] for value in y])
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    ax.scatter(
+        house_sizes,
+        house_bedrooms,
+        house_prices,
+        label="Dados observados",
+    )
+
+    size_grid, bedroom_grid = np.meshgrid(
+        np.linspace(house_sizes.min(), house_sizes.max(), 30),
+        np.linspace(house_bedrooms.min(), house_bedrooms.max(), 30),
+    )
+
+    price_grid = (
+        b[0][0]
+        + b[1][0] * size_grid
+        + b[2][0] * bedroom_grid
+    )
+
+    ax.plot_surface(
+        size_grid,
+        bedroom_grid,
+        price_grid,
+        alpha=0.6,
+    ) # Plano de regressão
+
+    ax.set_xlabel("Tamanho da casa (sq ft)")
+    ax.set_ylabel("Quantidade de quartos")
+    ax.set_zlabel("Preço da casa (R$)")
+    ax.set_title(
+        "Tamanho da casa e quantidade de quartos vs. preço da casa"
+    )
+
+    plt.show()
+
+    def calc(size, bedrooms):
+        return b[0][0] + b[1][0] * size + b[2][0] * bedrooms
+
+    print(f"Preço esperado para uma casa de 1650 sq ft e 3 quartos: R${calc(1650, 3):.2f}") 
+    print(f"Preço esperado para uma casa de 1650 sq ft e 2 quartos: R${calc(1650, 2):.2f}")
+    print(f"Preço esperado para uma casa de 1650 sq ft e 4 quartos: R${calc(1650, 4):.2f}")
+
+    from sklearn.linear_model import LinearRegression
+
+    lib_model = LinearRegression()
+    lib_model.fit(X, y)
+
+    print(f"Preço esperado para uma casa de 1650 sq ft e 3 quartos (sklearn): R${lib_model.predict([[1, 1650, 3]])[0][0]:.2f}")$
+
+
+# Demonstração da 3ª parte do trabalho, que consiste em regressão polinomial.
+def demo_polynomial_regression():
+    import matplotlib.pyplot as plt
+    import pandas as pd
+
+
+    # Define o "blueprint" dos gráficos a serem plotados, que consiste em uma lista de tuplas (grau do polinômio, cor do gráfico)
+    PLOTS_BLUEPRINT = [(1, 'red'), (2, 'green'), (3, 'black'), (8, 'yellow')]
+
+    # Pega os dados do arquivo CSV e retorna X e y
+    def get_datasets():
+        R = pd.read_csv("trabalho_3_parte_3.csv", header=None)
+
+        X = R[0].tolist()
+        y = R[1].tolist()
+
+        return X, y
+
+
+    # Mostra um gráfico para o par X, Y e plota os gráficos de regressão polinomial para os graus definidos no "blueprint"
+    def show_chart(x, y):
+        plt.scatter(x, y, color='blue')
+
+        for deg, color in PLOTS_BLUEPRINT:
+            X = x
+            Y = [sum(beta * (x_ ** power) for power, beta in enumerate(polyfit(x, y, deg))) for x_ in x]
+            MSE = mse(X, Y)
+
+            print(MSE)
+
+            plt.plot(X, Y, color=color)
+
+        plt.show()
+
+
+    X, y = get_datasets()
+    show_chart(X, y)
