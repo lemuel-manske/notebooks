@@ -2,7 +2,7 @@ import math
 import copy
 
 
-def transpose(A):
+def transpose(A) :
     r = []
 
     for _ in range(len(A[0])):
@@ -39,6 +39,7 @@ def upper_t(A):
     return new_A, ident
 
 
+# Substituição regressiva, que é utilizada para resolver sistemas lineares.
 def backward_subs(A):
     t_s, i_t_s = upper_t(A)
 
@@ -159,96 +160,8 @@ def identity(A):
     return r
 
 
-def avg(A):
-    return sum(A) / len(A)
-
-
-# Função de correlação da regressão linear
-def corr(X: list[int], y: list[float]) -> float:
-    avg_x = avg(X)
-    avg_y = avg(y)
-
-    de: float = 0.0
-    dv1: float = 0.0
-    dv2: float = 0.0
-
-    for x, y_ in zip(X, y):
-        de += (x - avg_x) * (y_ - avg_y)
-        dv1 += (x - avg_x)**2
-        dv2 += (y_ - avg_y)**2
-
-    return de / math.sqrt(dv1 * dv2)
-
-
-# Função de regressão linear, retorna os betas + ŷ
-def lin_reg(x_: float, X: list[int], y: list[float]):
-    avg_x = avg(X)
-    avg_y = avg(y)
-
-    b1: float = 0.0
-
-    de: float = 0.0
-    dv: float = 0.0
-
-    for x, y_ in zip(X, y):
-        de += (x - avg_x) * (y_ - avg_y)
-        dv += (x - avg_x)**2
-
-    b1 = de / dv
-
-    b0 = avg_y - (b1 * avg_x)
-
-    y_pred = b0 + (b1 * x_)
-
-    return b0, b1, y_pred
-
-
-# Função de regressão linear múltipla, retorna os betas + ŷ
-def lin_reg_mul(X, y):
-    def B(X, y):
-        x_T = transpose(X)
-        c = mul(x_T, X)
-        c_inversa = inversed(c)
-        r = mul(c_inversa, x_T)
-        return mul(r, y)
-
-    betas = B(X, y)
-
-    return betas, predict(X, betas)
-
-
-# Função de previsão, retorna os valores previstos para os dados de entrada X e os betas calculados.
-def predict(X, betas):
-    return mul(X, betas)
-
-
-# Função de erro quadrático, retorna o SSE, que é a soma dos quadrados dos erros,
-# ou seja, a soma das diferenças entre os valores reais e os valores previstos ao quadrado.
-
-# É utilizado posteriormente pelo polyfit para calcular o MSE, que é o erro médio quadrático.
-def sse(x, y, coefs):
-    s = 0
-
-    for xi, yi in zip(x, y):
-        y_pred = 0
-
-        for exp, b in enumerate(coefs):
-            y_pred += b * (xi ** exp)
-
-        s += (yi - y_pred) ** 2
-
-    return s
-
-
-# Função de erro médio quadrático, retorna o MSE, que é o erro médio quadrático,
-# ou seja, a média das diferenças entre os valores reais e os valores previstos ao quadrado.
-def mse(x, y):
-    n = len(x)
-    b0, b1, _ = lin_reg(x[0], x, y)
-    return sse(x, y, [b0, b1]) / n
-
-
 # Função de resolução de sistemas lineares, retorna a solução do sistema Ax = b.
+# Usamos para resolver a regressão polinomial.
 def solve(A, b):
     n = len(A)
 
@@ -283,6 +196,95 @@ def solve(A, b):
     return [M[i][-1] for i in range(n)]
 
 
+def avg(A):
+    return sum(A) / len(A)
+
+
+# Função de correlação da regressão linear
+def corr(X: list[int], y: list[float]) -> float:
+    avg_x = avg(X)
+    avg_y = avg(y)
+
+    de: float = 0.0
+    dv1: float = 0.0
+    dv2: float = 0.0
+
+    for x, y_ in zip(X, y):
+        de += (x - avg_x) * (y_ - avg_y)
+        dv1 += (x - avg_x)**2
+        dv2 += (y_ - avg_y)**2
+
+    return de / math.sqrt(dv1 * dv2)
+
+
+# Função de regressão linear, retorna os betas + y previsto
+def lin_reg(x_: float, X: list[int], y: list[float]):
+    avg_x = avg(X)
+    avg_y = avg(y)
+
+    b1: float = 0.0
+
+    de: float = 0.0
+    dv: float = 0.0
+
+    for x, y_ in zip(X, y):
+        de += (x - avg_x) * (y_ - avg_y)
+        dv += (x - avg_x)**2
+
+    b1 = de / dv
+
+    b0 = avg_y - (b1 * avg_x)
+
+    y_pred = b0 + (b1 * x_)
+
+    return b0, b1, y_pred
+
+
+# Função de previsão, retorna os valores previstos para os dados de entrada X e os betas calculados.
+def predict(X, betas):
+    return mul(X, betas)
+
+
+# Função de regressão linear múltipla, retorna os betas + y previsto
+def lin_reg_mul(X, y):
+    def B(X, y):
+        x_T = transpose(X)
+        c = mul(x_T, X)
+        c_inversa = inversed(c)
+        r = mul(c_inversa, x_T)
+        return mul(r, y)
+
+    betas = B(X, y)
+
+    return betas, predict(X, betas)
+
+
+# Função de erro quadrático, retorna o SSE, que é a soma dos quadrados dos erros,
+# ou seja, a soma das diferenças entre os valores reais e os valores previstos ao quadrado.
+
+# É utilizado posteriormente pelo polyfit para calcular o MSE, que é o erro médio quadrático.
+def sse(x, y, coefs):
+    s = 0
+
+    for xi, yi in zip(x, y):
+        y_pred = 0
+
+        for exp, b in enumerate(coefs):
+            y_pred += b * (xi ** exp)
+
+        s += (yi - y_pred) ** 2
+
+    return s
+
+
+# Função de erro médio quadrático, retorna o MSE, que é o erro médio quadrático,
+# ou seja, a média das diferenças entre os valores reais e os valores previstos ao quadrado.
+def mse(x, y):
+    n = len(x)
+    b0, b1, _ = lin_reg(x[0], x, y)
+    return sse(x, y, [b0, b1]) / n
+
+
 # Função de ajuste polinomial, retorna os coeficientes do polinômio que melhor se ajusta aos dados.
 # É equivalente ao numpy.polyfit, mas implementado manualmente para fins de aprendizado.
 def polyfit(x, y, deg):
@@ -310,9 +312,8 @@ def polyfit(x, y, deg):
     return coefs
 
 
-# Demonstração da 1ª parte do trabalho, que consiste em regressão linear simples.
+# Demonstração da 1a parte do trabalho, que consiste em regressão linear simples.
 def demo_linear_regression():
-    import matplotlib.pyplot as plt
     import pandas as pd
 
 
@@ -322,42 +323,48 @@ def demo_linear_regression():
 
         return [
             {
+                "title": "Dataset 1",
                 "color": "red",
                 "points": (R["x1"].tolist(), R["y1"].tolist()),
             },
             {
+                "title": "Dataset 2",
                 "color": "blue",
                 "points": (R["x2"].tolist(), R["y2"].tolist()),
             },
             {
+                "title": "Dataset 3",
                 "color": "green",
                 "points": (R["x3"].tolist(), R["y3"].tolist()),
             },
             {
+                "title": "Dataset 4",
                 "color": "orange",
                 "points": (R["x4"].tolist(), R["y4"].tolist()),
             }
         ]
 
 
-    # Mostra um gráfico para o par X, Y e plota a linha de regressão linear.
+    # Mostra um gráfico para o par X, Y e plota a linha de regressão linear para um dado dataset.
     def show_chart(d):
+        import matplotlib.pyplot as plt
+
         x = d['points'][0]
         y = d['points'][1]
         color = d['color']
 
         y_pred = []
 
-        c = corr(x, y)
+        c = corr(x, y) # correlação
 
         for x_ in x:
-            b0, b1, r = lin_reg(x_, x, y)
+            b0, b1, r = lin_reg(x_, x, y) # regressão linear
             y_pred.append(r)
 
             title = f"Correlação: {c:.4f}, y={b0:.4f}+{b1:.4f}*X"
             plt.title(title)
 
-        plt.scatter(x, y, color=color, label='Dataset')
+        plt.scatter(x, y, color=color, label=d['title'])
 
         plt.plot(x, y_pred)
 
@@ -369,8 +376,44 @@ def demo_linear_regression():
     for dataset in get_datasets():
         show_chart(dataset)
 
+    print()
+    print(
+        "3) Qual dos datasets não é apropriado para regressão linear? Justifique sua resposta."
+    )
 
-# Demonstração da 2ª parte do trabalho, que consiste em regressão linear múltipla.
+    print(
+        "O dataset 2 (de cor azul) não é apropriado para regressão linear. ",
+        "Seria um caso de regressão polinomial, pois a relação entre X e Y não é linear. ",
+        "Nesse caso, estamos usando um chinelo para matar um dinossauro.",
+    )
+
+    print()
+    print(
+        "4) Ao analisar o gráfico de dispersão e o resultado da regressão linear para o dataset 4, observa-se um problema. O que deveria ser feito antes de ajustar o modelo de regressão? Justifique sua resposta."
+    )
+
+    print(
+        "O dataset 4 possui um outlier, que é um ponto de dados que se distancia significativamente dos demais. ",
+        "Antes de ajustar o modelo de regressão, seria importante identificar e tratar esse outlier (removendo ou analisando melhor). ",
+        "Para demonstrar, removemos o outlier e refizemos a regressão linear, obtendo uma linha de regressão mais adequada aos dados restantes.",
+    )
+
+    dataset_4 = get_datasets()[3]
+
+    outlier_idx = 2
+    dataset_4_wo_outlier = {
+        "title": "Dataset 4 (sem outlier)",
+        "color": "orange",
+        "points": (
+            dataset_4['points'][0][:outlier_idx] + dataset_4['points'][0][outlier_idx + 1:],
+            dataset_4['points'][1][:outlier_idx] + dataset_4['points'][1][outlier_idx + 1:],
+        )
+    }
+
+    show_chart(dataset_4_wo_outlier)
+
+
+# Demonstração da 2a parte do trabalho, que consiste em regressão linear múltipla.
 def demo_multiple_regression():
     import matplotlib.pyplot as plt
     import numpy as np
@@ -379,8 +422,21 @@ def demo_multiple_regression():
 
     # Pega os dados do arquivo CSV e retorna X e y.
     def get_dataset():
-        R = pd.read_csv("trabalho_1_parte_2.csv", header=None) \
-            .to_numpy() \
+        R = pd.read_csv("trabalho_1_parte_2.csv", header=None)
+
+        print()
+        print("b) Utilize o comando python .describe() para fazer uma primeira análise estatística da sua base de dados. Qual a média de preço das casas? Quanto custa a menor casa? Quantos quartos tem a casa mais cara?")
+
+        print()
+        print(R.describe())
+
+        most_cheap = R[2].min()
+        most_expensive_bedrooms = R[1].max()
+
+        print()
+        print(f"A menor casa custa {most_cheap:.2f}, e a casa mais cara tem {most_expensive_bedrooms:.0f} quartos.")
+
+        R = R.to_numpy() \
             .tolist()
 
         RESULTS_COL_IDX = 2
@@ -411,11 +467,15 @@ def demo_multiple_regression():
         x_label,
         chart_title,
     ):
+        print()
         print(correlation_message)
+
         c = corr(values, prices)
         print(c)
 
+        print()
         print(regression_message)
+
         b0, b1, _ = lin_reg(prediction_value, values, prices)
         print(f"b0: {b0}, b1: {b1}")
 
@@ -428,8 +488,10 @@ def demo_multiple_regression():
         )
 
         plt.xlabel(x_label)
-        plt.ylabel("Preço da casa (R$)")
+        plt.ylabel("Preço da casa")
+
         plt.title(f"{chart_title}, correlação: {c:.2f}")
+
         plt.legend()
         plt.show()
 
@@ -447,7 +509,7 @@ def demo_multiple_regression():
         "Correlação: Tamanho casa x Preço casa:",
         "Regressão linear: Tamanho casa x Preço casa:",
         "Tamanho da casa (sq ft)",
-        "Tamanho da casa vs Preço da casa",
+        "d) Tamanho da casa vs Preço da casa",
     )
 
     # Análise individual: quantidade de quartos x preço.
@@ -458,7 +520,7 @@ def demo_multiple_regression():
         "Correlação: Quantidade quartos x Preço casa:",
         "Regressão linear: Quantidade quartos x Preço casa:",
         "Quantidade de quartos",
-        "Quantidade de quartos vs Preço da casa",
+        "d) Quantidade de quartos vs Preço da casa",
     )
 
     # Regressão linear múltipla e visualização do plano de regressão.
@@ -495,19 +557,25 @@ def demo_multiple_regression():
         value[0] for value in price_grid
     ]).reshape(size_grid.shape)
 
+    # Plano de regressão
     ax.plot_surface(
         size_grid,
         bedroom_grid,
         price_grid,
         alpha=0.6,
-    )  # Plano de regressão
+    )
 
     ax.set_xlabel("Tamanho da casa")
     ax.set_ylabel("Quantidade de quartos")
-    ax.set_zlabel("Preço da casa (R$)")
+    ax.set_zlabel("Preço da casa")
+
+    corr_house_sizes = corr(house_sizes.tolist(), house_prices.tolist())
+    corr_house_bedrooms = corr(house_bedrooms.tolist(), house_prices.tolist())
 
     ax.set_title(
-        "Tamanho da casa e quantidade de quartos vs. preço da casa"
+        f"e) Tamanho da casa e quantidade de quartos vs. preço da casa\n"
+        f"Correlação tamanho casa x preço casa: {corr_house_sizes:.2f}\n"
+        f"Correlação quantidade quartos x preço casa: {corr_house_bedrooms:.2f}"
     )
 
     plt.show()
@@ -516,9 +584,18 @@ def demo_multiple_regression():
     def calc(size, bedrooms):
         return betas[0][0] + betas[1][0] * size + betas[2][0] * bedrooms
 
-    print(f"Preço esperado para uma casa de 1650 e 3 quartos: R${calc(1650, 3):.2f}")
-    print(f"Preço esperado para uma casa de 1650 e 2 quartos: R${calc(1650, 2):.2f}")
-    print(f"Preço esperado para uma casa de 1650 e 4 quartos: R${calc(1650, 4):.2f}")
+    print()
+    print("h) Calcule o preço de uma casa que tem tamanho de 1650 e 3 quartos. O resultado deve ser igual a 293081. Aumente e diminua a quantidade de número de quartos. O que acontece? Por qual motivo?")
+
+    print(f"Preço esperado para uma casa de 1650 e 3 quartos: {calc(1650, 3):.2f}")
+    print(f"Preço esperado para uma casa de 1650 e 2 quartos: {calc(1650, 2):.2f}")
+    print(f"Preço esperado para uma casa de 1650 e 4 quartos: {calc(1650, 4):.2f}")
+
+    print()
+    print(
+        "Isso acontece porque o coeficiente associado ao número de quartos na regressão múltipla é negativo. ",
+        "Mesmo que mais quartos geralmente aumentem o preço, quando o tamanho da casa é mantido igual, o modelo indica que mais quartos podem diminuir o valor estimado devido à relação entre tamanho e quantidade de quartos nos dados."
+    )
 
     # Comparação com a implementação do scikit-learn.
     from sklearn.linear_model import LinearRegression
@@ -528,20 +605,29 @@ def demo_multiple_regression():
 
     sklearn_predict = lib_model.predict([[1, 1650, 3]])[0][0]
 
-    print(f"Preço esperado para uma casa de 1650 e 3 quartos (sklearn): R${sklearn_predict:.2f}")
+    print()
+    print("i) Compare seus resultados com a função de regressão linear múltipla do python. Para isso você irá precisar das bibliotecas numpy e scikit-learn.")
+    print(f"Preço esperado para uma casa de 1650 e 3 quartos (sklearn): {sklearn_predict:.2f}")
 
 
-# Demonstração da 3ª parte do trabalho, que consiste em regressão polinomial.
+# Demonstração da 3a parte do trabalho, que consiste em regressão polinomial.
 def demo_polynomial_regression():
+    import random
+
     import matplotlib.pyplot as plt
     import pandas as pd
 
+    from sklearn.metrics import r2_score
 
-    # Define o "blueprint" dos gráficos a serem plotados, que consiste em uma lista de tuplas (grau do polinômio, cor do gráfico)
-    PLOTS_BLUEPRINT = [(1, 'red'), (2, 'green'), (3, 'black'), (8, 'yellow')]
+    PLOTS_BLUEPRINT = [
+        (1, "red"),
+        (2, "green"),
+        (3, "black"),
+        (8, "yellow"),
+    ]
 
-    # Pega os dados do arquivo CSV e retorna X e y
-    def get_datasets():
+    # Pega os dados do arquivo CSV e retorna X e y.
+    def get_dataset():
         R = pd.read_csv("trabalho_1_parte_3.csv", header=None)
 
         X = R[0].tolist()
@@ -549,105 +635,414 @@ def demo_polynomial_regression():
 
         return X, y
 
-    # Dividir aleatoriamente sendo 10% dos dados para teste e 90% para treino
-    def spread(x, y, test_p=0.1, seed=42):
-        import random
+    # Calcula o valor de y previsto para um valor de x e os coeficientes do polinômio.
+    def calc(x, coefs):
+        y_pred = 0
 
-        n = len(x)
+        for power, beta in enumerate(coefs):
+            y_pred += beta * (x ** power)
 
-        idxs = list(range(n))
+        return y_pred
+
+    # Divide aleatoriamente os dados, sendo 10% para teste e 90% para treino.
+    def split_dataset(X, y, test_percentage=0.1, seed=42):
+        indexes = list(range(len(X)))
 
         random.seed(seed)
-        random.shuffle(idxs)
+        random.shuffle(indexes)
 
-        n_test = int(n * test_p)
+        test_size = max(1, int(len(X) * test_percentage))
 
-        if n_test == 0:
-            n_test = 1
+        test_indexes = indexes[:test_size]
+        train_indexes = indexes[test_size:]
 
-        idxs_test = idxs[:n_test]
-        idxs_train = idxs[n_test:]
+        x_train = [X[i] for i in train_indexes]
+        y_train = [y[i] for i in train_indexes]
 
-        x_train = []
-        y_train = []
-
-        for i in idxs_train:
-            x_train.append(x[i])
-            y_train.append(y[i])
-
-        x_test = []
-        y_test = []
-
-        for i in idxs_test:
-            x_test.append(x[i])
-            y_test.append(y[i])
+        x_test = [X[i] for i in test_indexes]
+        y_test = [y[i] for i in test_indexes]
 
         return x_train, y_train, x_test, y_test
 
-    def show_chart(x_train, y_train, x_test, y_test):
-        from sklearn.metrics import r2_score
+    X, y = get_dataset()
 
-        plt.scatter(x_train, y_train, color='blue', label='Treino')
-        plt.scatter(x_test, y_test, color='#FF1493', marker='x', linewidths=2, label='Teste')
+    # b) Gráfico de dispersão dos dados.
+    plt.scatter(
+        X,
+        y,
+        label="Dados observados",
+    )
 
-        results = []
+    sorted_X = sorted(X)
 
-        for deg, color in PLOTS_BLUEPRINT:
-            coefs = polyfit(x_train, y_train, deg)
+    errors = []
 
-            sorted_x_train = sorted(x_train)
+    print()
+    print(
+        "g) Calcule o Erro Quadrático Médio (EQM) para cada linha de regressão. "
+        "Qual é o mais preciso?"
+    )
 
-            y_curva = []
-            for x_ in sorted_x_train:
-                y_ = 0
+    # c - f) Calcula e plota as regressões de graus 1, 2, 3 e 8.
+    for degree, color in PLOTS_BLUEPRINT:
+        coefs = polyfit(
+            X,
+            y,
+            degree,
+        )
 
-                for power, beta in enumerate(coefs):
-                    y_ += beta * (x_ ** power)
+        y_curve = [
+            calc(x, coefs)
+            for x in sorted_X
+        ]
 
-                y_curva.append(y_)
+        plt.plot(
+            sorted_X,
+            y_curve,
+            color=color,
+            label=f"Grau {degree}",
+        )
 
-            plt.plot(sorted_x_train, y_curva, color=color)
+        eqm = sse(
+            X,
+            y,
+            coefs,
+        ) / len(X)
 
-            eqm_treino = sse(x_train, y_train, coefs) / len(x_train)
-            eqm_teste = sse(x_test, y_test, coefs) / len(x_test)
+        errors.append(
+            (degree, eqm)
+        )
 
-            results.append((deg, eqm_teste)) 
+        print(
+            f"Grau {degree}: EQM = {eqm:.4f}"
+        )
 
-            y_previsto_treino = []
-            for x_ in x_train:
-                y_ = 0
-                for power, beta in enumerate(coefs):
-                    y_ += beta * (x_ ** power)
-                y_previsto_treino.append(y_)
+    best_degree, best_eqm = min(
+        errors,
+        key=lambda item: item[1],
+    )
 
-            y_previsto_teste = []
-            for x_ in x_test:
-                y_ = 0
-                for power, beta in enumerate(coefs):
-                    y_ += beta * (x_ ** power)
-                y_previsto_teste.append(y_)
-            r2_treino = r2_score(y_train, y_previsto_treino)
-            r2_teste = r2_score(y_test, y_previsto_teste)
+    print()
+    print(
+        f"Considerando somente o EQM calculado sobre todos os dados, "
+        f"o modelo mais preciso é o de grau {best_degree}, "
+        f"com EQM = {best_eqm:.4f}."
+    )
 
-            print(
-                f"Treino-Teste Grau {deg} / "
-                f"EQM p treino {eqm_treino:.4f} / EQM p teste {eqm_teste:.4f} / "
-                f"R2 treino {r2_treino:.4f} / R2 teste {r2_teste:.4f}"
+    plt.xlabel("X")
+    plt.ylabel("Y")
+
+    plt.title(
+        "b - g) Regressão polinomial"
+    )
+
+    plt.legend()
+    plt.show()
+
+    # h) Divide aleatoriamente os dados em treino e teste.
+    x_train, y_train, x_test, y_test = split_dataset(
+        X,
+        y,
+    )
+
+    print()
+    print(
+        "h) Os dados foram divididos aleatoriamente em 90% para treinamento "
+        "e 10% para teste."
+    )
+
+    print(
+        f"Quantidade de dados de treino: {len(x_train)}"
+    )
+
+    print(
+        f"Quantidade de dados de teste: {len(x_test)}"
+    )
+
+    # i) Ajusta novamente as regressões usando somente os dados de treinamento.
+    plt.scatter(
+        x_train,
+        y_train,
+        label="Treino",
+    )
+
+    plt.scatter(
+        x_test,
+        y_test,
+        color="magenta",
+        marker="x",
+        linewidths=2,
+        label="Teste",
+    )
+
+    results = []
+
+    print()
+    print(
+        "j) Calcule o EQM utilizando somente os dados de teste."
+    )
+
+    for degree, color in PLOTS_BLUEPRINT:
+        coefs = polyfit(
+            x_train,
+            y_train,
+            degree,
+        )
+
+        y_curve = [
+            calc(x, coefs)
+            for x in sorted_X
+        ]
+
+        plt.plot(
+            sorted_X,
+            y_curve,
+            color=color,
+            label=f"Grau {degree}",
+        )
+
+        y_pred_train = [
+            calc(x, coefs)
+            for x in x_train
+        ]
+
+        y_pred_test = [
+            calc(x, coefs)
+            for x in x_test
+        ]
+
+        eqm_train = sse(
+            x_train,
+            y_train,
+            coefs,
+        ) / len(x_train)
+
+        eqm_test = sse(
+            x_test,
+            y_test,
+            coefs,
+        ) / len(x_test)
+
+        r2_train = r2_score(
+            y_train,
+            y_pred_train,
+        )
+
+        r2_test = r2_score(
+            y_test,
+            y_pred_test,
+        )
+
+        results.append(
+            (
+                degree,
+                eqm_train,
+                eqm_test,
+                r2_train,
+                r2_test,
             )
-        melhor_grau, menor_eqm_teste = min(results, key=lambda r: r[1])
+        )
 
-        print(f"k)Modelo mais preciso nos dados de teste é o de grau {melhor_grau}")
+        print()
+        print(
+            f"Grau {degree}:"
+        )
 
-        plt.title("Regressão polinomial só c dados de treino")
-        plt.legend()
+        print(
+            f"EQM treino: {eqm_train:.4f}"
+        )
 
-        plt.show()
+        print(
+            f"EQM teste: {eqm_test:.4f}"
+        )
 
-    X, y = get_datasets()
+        print(
+            f"R2 treino: {r2_train:.4f}"
+        )
 
-    x_train, y_train, x_test, y_test = spread(X, y)
+        print(
+            f"R2 teste: {r2_test:.4f}"
+        )
 
-    show_chart(x_train, y_train, x_test, y_test)
+    print()
+    print(
+        "k) Calcule o R2 para os dados de treino e teste. "
+        "O que se pode concluir com os resultados?"
+    )
+
+    print(
+        "Quanto mais próximo de 1 for o R2, melhor o modelo consegue explicar "
+        "a variação dos dados. Porém, um R2 muito alto nos dados de treino e "
+        "consideravelmente menor nos dados de teste pode indicar overfitting."
+    )
+
+    best_model = min(
+        results,
+        key=lambda item: item[2],
+    )
+
+    print()
+    print(
+        "l) Visto o cálculo do erro e do coeficiente de determinação, "
+        "qual o modelo mais preciso neste caso?"
+    )
+
+    print(
+        f"Considerando principalmente o desempenho nos dados de teste, "
+        f"o modelo mais preciso é o de grau {best_model[0]}, "
+        f"com EQM de teste = {best_model[2]:.4f} "
+        f"e R2 de teste = {best_model[4]:.4f}."
+    )
+
+    plt.xlabel("X")
+    plt.ylabel("Y")
+
+    plt.title(
+        "i - l) Regressão polinomial com dados de treino e teste"
+    )
+
+    plt.legend()
+    plt.show()
+
+    # m) Calcula a regressão polinomial de grau 20.
+    degree = 20
+
+    coefs = polyfit(
+        x_train,
+        y_train,
+        degree,
+    )
+
+    y_pred_train = [
+        calc(x, coefs)
+        for x in x_train
+    ]
+
+    y_pred_test = [
+        calc(x, coefs)
+        for x in x_test
+    ]
+
+    eqm_train_20 = sse(
+        x_train,
+        y_train,
+        coefs,
+    ) / len(x_train)
+
+    eqm_test_20 = sse(
+        x_test,
+        y_test,
+        coefs,
+    ) / len(x_test)
+
+    r2_train_20 = r2_score(
+        y_train,
+        y_pred_train,
+    )
+
+    r2_test_20 = r2_score(
+        y_test,
+        y_pred_test,
+    )
+
+    print()
+    print(
+        "m) Trace a curva de regressão polinomial de grau 20 e compare seu "
+        "comportamento com os modelos de grau 1, 2, 3 e 8."
+    )
+
+    print()
+    print(
+        "Grau 20:"
+    )
+
+    print(
+        f"EQM treino: {eqm_train_20:.4f}"
+    )
+
+    print(
+        f"EQM teste: {eqm_test_20:.4f}"
+    )
+
+    print(
+        f"R2 treino: {r2_train_20:.4f}"
+    )
+
+    print(
+        f"R2 teste: {r2_test_20:.4f}"
+    )
+
+    print()
+    print(
+        "O modelo de grau 20 tende a se ajustar muito bem aos dados de treino, "
+        "mas sua curva apresenta oscilações maiores e pode ter desempenho pior "
+        "nos dados de teste. Isso ocorre por causa do overfitting: o modelo "
+        "fica complexo demais e passa a representar particularidades dos dados "
+        "de treinamento em vez de representar apenas a tendência geral (generalização)."
+    )
+
+    plt.scatter(
+        x_train,
+        y_train,
+        label="Treino",
+    )
+
+    plt.scatter(
+        x_test,
+        y_test,
+        color="magenta",
+        marker="x",
+        linewidths=2,
+        label="Teste",
+    )
+
+    # Plota novamente os graus 1, 2, 3 e 8 para facilitar a comparação.
+    for degree, color in PLOTS_BLUEPRINT:
+        coefs = polyfit(
+            x_train,
+            y_train,
+            degree,
+        )
+
+        y_curve = [
+            calc(x, coefs)
+            for x in sorted_X
+        ]
+
+        plt.plot(
+            sorted_X,
+            y_curve,
+            color=color,
+            label=f"Grau {degree}",
+        )
+
+    coefs_20 = polyfit(
+        x_train,
+        y_train,
+        20,
+    )
+
+    y_curve_20 = [
+        calc(x, coefs_20)
+        for x in sorted_X
+    ]
+
+    plt.plot(
+        sorted_X,
+        y_curve_20,
+        color="purple",
+        label="Grau 20",
+    )
+
+    plt.xlabel("X")
+    plt.ylabel("Y")
+
+    plt.title(
+        "m) Comparação com regressão polinomial de grau 20"
+    )
+
+    plt.legend()
+    plt.show()
 
 
 if __name__ == "__main__":
