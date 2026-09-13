@@ -549,25 +549,105 @@ def demo_polynomial_regression():
 
         return X, y
 
+    # Dividir aleatoriamente sendo 10% dos dados para teste e 90% para treino
+    def spread(x, y, test_p=0.1, seed=42):
+        import random
 
-    # Mostra um gráfico para o par X, Y e plota os gráficos de regressão polinomial para os graus definidos no "blueprint"
-    def show_chart(x, y):
-        plt.scatter(x, y, color='blue')
+        n = len(x)
+
+        idxs = list(range(n))
+
+        random.seed(seed)
+        random.shuffle(idxs)
+
+        n_test = int(n * test_p)
+
+        if n_test == 0:
+            n_test = 1
+
+        idxs_test = idxs[:n_test]
+        idxs_train = idxs[n_test:]
+
+        x_train = []
+        y_train = []
+
+        for i in idxs_train:
+            x_train.append(x[i])
+            y_train.append(y[i])
+
+        x_test = []
+        y_test = []
+
+        for i in idxs_test:
+            x_test.append(x[i])
+            y_test.append(y[i])
+
+        return x_train, y_train, x_test, y_test
+
+    def show_chart(x_train, y_train, x_test, y_test):
+        from sklearn.metrics import r2_score
+
+        plt.scatter(x_train, y_train, color='blue', label='Treino')
+        plt.scatter(x_test, y_test, color='#FF1493', marker='x', linewidths=2, label='Teste')
+
+        results = []
 
         for deg, color in PLOTS_BLUEPRINT:
-            X = x
-            Y = [sum(beta * (x_ ** power) for power, beta in enumerate(polyfit(x, y, deg))) for x_ in x]
-            MSE = mse(X, Y)
+            coefs = polyfit(x_train, y_train, deg)
 
-            print(MSE)
+            sorted_x_train = sorted(x_train)
 
-            plt.plot(X, Y, color=color)
+            y_curva = []
+            for x_ in sorted_x_train:
+                y_ = 0
+
+                for power, beta in enumerate(coefs):
+                    y_ += beta * (x_ ** power)
+
+                y_curva.append(y_)
+
+            plt.plot(sorted_x_train, y_curva, color=color)
+
+            eqm_treino = sse(x_train, y_train, coefs) / len(x_train)
+            eqm_teste = sse(x_test, y_test, coefs) / len(x_test)
+
+            results.append((deg, eqm_teste)) 
+
+            y_previsto_treino = []
+            for x_ in x_train:
+                y_ = 0
+                for power, beta in enumerate(coefs):
+                    y_ += beta * (x_ ** power)
+                y_previsto_treino.append(y_)
+
+            y_previsto_teste = []
+            for x_ in x_test:
+                y_ = 0
+                for power, beta in enumerate(coefs):
+                    y_ += beta * (x_ ** power)
+                y_previsto_teste.append(y_)
+            r2_treino = r2_score(y_train, y_previsto_treino)
+            r2_teste = r2_score(y_test, y_previsto_teste)
+
+            print(
+                f"Treino-Teste Grau {deg} / "
+                f"EQM p treino {eqm_treino:.4f} / EQM p teste {eqm_teste:.4f} / "
+                f"R2 treino {r2_treino:.4f} / R2 teste {r2_teste:.4f}"
+            )
+        melhor_grau, menor_eqm_teste = min(results, key=lambda r: r[1])
+
+        print(f"k)Modelo mais preciso nos dados de teste é o de grau {melhor_grau}")
+
+        plt.title("Regressão polinomial só c dados de treino")
+        plt.legend()
 
         plt.show()
 
-
     X, y = get_datasets()
-    show_chart(X, y)
+
+    x_train, y_train, x_test, y_test = spread(X, y)
+
+    show_chart(x_train, y_train, x_test, y_test)
 
 
 if __name__ == "__main__":
