@@ -645,7 +645,7 @@ def demo_polynomial_regression():
         return y_pred
 
     # Divide aleatoriamente os dados, sendo 10% para teste e 90% para treino.
-    def split_dataset(X, y, test_percentage=0.1, seed=42):
+    def split_dataset(X, y, test_percentage=0.1, seed=47):
         indexes = list(range(len(X)))
 
         random.seed(seed)
