@@ -645,7 +645,7 @@ def demo_polynomial_regression():
         return y_pred
 
     # Divide aleatoriamente os dados, sendo 10% para teste e 90% para treino.
-    def split_dataset(X, y, test_percentage=0.1, seed=47):
+    def split_dataset(X, y, test_percentage=0.1, seed=47):  # Essa seed demonstrou melhores resultados de aleatoriedade
         indexes = list(range(len(X)))
 
         random.seed(seed)
@@ -1049,6 +1049,6 @@ if __name__ == "__main__":
     # Aqui, você pode escolher qual demonstração deseja executar.
     # Descomente a linha correspondente à demonstração desejada.
 
-    # demo_linear_regression()
-    # demo_multiple_regression()
+    demo_linear_regression()
+    demo_multiple_regression()
     demo_polynomial_regression()
